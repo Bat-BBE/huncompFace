@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Mood Assistant</title>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+  body{background:linear-gradient(135deg,#6e8efb,#a777e3);min-height:100vh;display:flex;flex-direction:column;align-items:center;color:#fff;}
+  .container{max-width:1000px;width:100%;background:rgba(255,255,255,0.95);color:#333;border-radius:15px;overflow:hidden;margin:20px;padding:20px;}
+  header{text-align:center;padding:15px;background:linear-gradient(to right,#6e8efb,#a777e3);color:white;border-radius:15px 15px 0 0;}
+  h1{font-size:2rem;}
+  .main{display:flex;flex-wrap:wrap;gap:20px;margin-top:20px;}
+  .video-container{flex:1;min-width:300px;position:relative;border-radius:10px;overflow:hidden;box-shadow:0 5px 15px rgba(0,0,0,0.2);}
+  #video{width:100%;transform:scaleX(-1);}
+  #overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+  .loading{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:white;border-radius:10px;z-index:10;}
+  .controls{flex:1;min-width:300px;display:flex;flex-direction:column;gap:15px;}
+  button{padding:10px 15px;border:none;border-radius:50px;background:linear-gradient(to right,#6e8efb,#a777e3);color:white;font-weight:bold;cursor:pointer;transition:0.3s;}
+  button:hover{transform:translateY(-2px);}
+  .advice-box{margin-top:15px;padding:15px;background:#f0f0f0;border-radius:10px;min-height:100px;font-size:1rem;color:#333;overflow-y:auto;}
+  @media(max-width:768px){.main{flex-direction:column;}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Smart Mood Assistant</h1>
+    <p>Нүүрний сэтгэл хөдлөл тодорхойлж emoji ба зөвлөгөө гаргана</p>
+  </header>
+  <div class="main">
+    <div class="video-container">
+      <video id="video" autoplay muted></video>
+      <canvas id="overlay"></canvas>
+      <div class="loading" id="loading">Модел болон камерийг ачаалж байна...</div>
+    </div>
+    <div class="controls">
+      <button id="startBtn">▶ Эхлүүлэх</button>
+      <button id="pauseBtn">⏸ Зогсоох</button>
+      <button id="screenshotBtn">📸 Зураг авах</button>
+      <div class="advice-box" id="adviceBox">Энд зөвлөгөө харагдана</div>
+    </div>
+  </div>
+</div>
+<script>
+const video = document.getElementById('video');
+const overlay = document.getElementById('overlay');
+const loading = document.getElementById('loading');
+const startBtn = document.getElementById('startBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const screenshotBtn = document.getElementById('screenshotBtn');
+const adviceBox = document.getElementById('adviceBox');
+
+let isRunning = true;
+let lastTime = 0;
+const interval = 150;
+
+// Камер асаах
+async function startVideo() {
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({video:{}});
+    video.srcObject = stream;
+    video.addEventListener('loadeddata', ()=>loading.style.display='none');
+  } catch(err){
+    loading.textContent = 'Камер олдсонгүй: '+err.message;
+  }
+}
+
+// Модел ачаалах
+async function loadModels(){
+  const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+    faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
+  ]);
+  startVideo();
+}
+
+// Emoji ба зөвлөгөө
+function getEmojiAdvice(expressions){
+  const maxExp = Object.keys(expressions).reduce((a,b)=>expressions[a]>expressions[b]?a:b);
+  switch(maxExp){
+    case 'happy': return {emoji:'😂', advice:'Хөгжилтэй харагдаж байна! Өдөр бүр ийм байгаарай :)'};
+    case 'angry': return {emoji:'😡', advice:'Жоохон ууртай байна! Амьсгаа аваад тайвширцгаая :)'};
+    case 'surprised': return {emoji:'😮', advice:'Гайхсан байна! Сайн ч бай муу ч бай тайван байгаарай :)'};
+    case 'sad': return {emoji:'😢', advice:'Гунигтай байна! Гэхдээ чи хүчтэй :)'};
+    default: return {emoji:'😐', advice:'Тайван байна! Тайван хүн сайн шийдвэр гаргадаг.'};
+  }
+}
+
+// Detection loop
+video.addEventListener('play', ()=>{
+  overlay.width = video.videoWidth;
+  overlay.height = video.videoHeight;
+  const displaySize = {width:video.videoWidth,height:video.videoHeight};
+  faceapi.matchDimensions(overlay,displaySize);
+
+  async function detect(){
+    if(!isRunning) return requestAnimationFrame(detect);
+    const now = performance.now();
+    if(now - lastTime >= interval){
+      lastTime = now;
+      const detections = await faceapi.detectAllFaces(video,new faceapi.TinyFaceDetectorOptions())
+                               .withFaceLandmarks().withFaceExpressions();
+      const resized = faceapi.resizeResults(detections, displaySize);
+      const ctx = overlay.getContext('2d');
+      ctx.clearRect(0,0,overlay.width,overlay.height);
+      
+      adviceBox.innerHTML = ''; // Бүгдийг цэвэрлэх
+      
+      resized.forEach((det,index)=>{
+        const {x,y,width,height} = det.detection.box;
+        const {emoji,advice} = getEmojiAdvice(det.expressions);
+        ctx.font = `${Math.round(width*0.8)}px Arial`;
+        ctx.fillText(emoji,x,y+height/1.2);
+        adviceBox.innerHTML += `<strong>Хүн ${index+1}:</strong> ${advice}<br>`;
+      });
+
+      if(resized.length===0) adviceBox.textContent='Нүүр танигдаагүй';
+    }
+    requestAnimationFrame(detect);
+  }
+  detect();
+});
+
+// Товчлуурууд
+startBtn.addEventListener('click',()=>isRunning=true);
+pauseBtn.addEventListener('click',()=>isRunning=false);
+screenshotBtn.addEventListener('click',()=>{
+  const tempCanvas=document.createElement('canvas');
+  tempCanvas.width=video.videoWidth;
+  tempCanvas.height=video.videoHeight;
+  const ctx=tempCanvas.getContext('2d');
+  ctx.drawImage(video,0,0,tempCanvas.width,tempCanvas.height);
+  ctx.drawImage(overlay,0,0);
+  const link=document.createElement('a');
+  link.href=tempCanvas.toDataURL('image/png');
+  link.download='mood.png';
+  link.click();
+});
+
+loadModels();
+</script>
+</body>
+</html>

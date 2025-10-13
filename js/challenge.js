@@ -64,7 +64,7 @@ function nextRound() {
   currentTask = emotionsList[Math.floor(Math.random() * emotionsList.length)];
   taskTitle.textContent = `Илэрхийл: ${currentTask.toUpperCase()} гаргана уу!!!`; 
   let timeLeft = 6;
-  timerBox.textContent = `Үлдсэн хугацаа: ${timeLeft}с`;
+  timerBox.textContent = `Үндсэн хугацаа: ${timeLeft}с`;
   timerInterval = setInterval(() => {
     timeLeft--;
     timerBox.textContent = `Үлдсэн хугацаа: ${timeLeft}с`;

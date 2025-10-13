@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Face Assistant — Тохиргоо</title>
+  <link rel="stylesheet" href="css/settings.css" />
+  <script defer src="js/settings.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <h2>⚙️ Хувийн тохиргоо</h2>
+      <nav class="menu">
+        <a href="dashboard.html">⬅ Буцах</a>
+        <a href="music.html">🎵 Дуу</a>
+      </nav>
+    </header>
+
+    <div class="settings-section">
+      <h3>Хэрэглэгч: <span id="settingsUser">...</span></h3>
+
+      <div class="setting-item">
+        <label for="musicPreference">🎵 Дууны сонголт:</label>
+        <select id="musicPreference">
+          <option value="relaxing">Тайвшруулах</option>
+          <option value="energetic">Эрч хүчтэй</option>
+          <option value="disgusted">Айдас хүйдэстэй</option>
+          <option value="happy">Жаргалтай</option>
+          <option value="fun">Хөгжилтэй</option>
+          <option value="emo">Гунигтай эмо</option>
+          <option value="sad emo">Уумаар</option>
+        </select>
+      </div>
+
+      <div class="setting-item">
+        <label for="adviceType">💡 Зөвлөгөөний төрөл:</label>
+        <select id="adviceType">
+          <option value="motivational">Урам зориг өгөх</option>
+          <option value="practical">Практик</option>
+          <option value="emotional">Сэтгэл хөдлөлийн</option>
+        </select>
+      </div>
+      <button id="saveSettingsBtn">Хадгалах</button>
+    </div>
+  </div>
+</body>
+</html>

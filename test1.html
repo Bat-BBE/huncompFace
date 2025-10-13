@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Face Assistant</title>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+  body{background:linear-gradient(135deg,#6e8efb,#a777e3);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;}
+  .container{max-width:1100px;width:100%;background:rgba(255,255,255,0.95);color:#333;border-radius:15px;padding:20px;margin:20px;}
+  header{text-align:center;padding:15px;background:linear-gradient(to right,#6e8efb,#a777e3);color:white;border-radius:15px;}
+  h1{font-size:2rem;}
+  .main{display:flex;flex-wrap:wrap;gap:20px;margin-top:20px;}
+  .video-container{flex:1;min-width:320px;position:relative;border-radius:10px;overflow:hidden;box-shadow:0 5px 15px rgba(0,0,0,0.2);}
+  #video{width:100%;transform:scaleX(-1);}
+  #overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+  .loading{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:white;border-radius:10px;z-index:10;}
+  .controls{flex:1;min-width:300px;display:flex;flex-direction:column;gap:15px;}
+  button{padding:10px 15px;border:none;border-radius:50px;background:linear-gradient(to right,#6e8efb,#a777e3);color:white;font-weight:bold;cursor:pointer;transition:0.3s;}
+  button:hover{transform:translateY(-2px);}
+  .advice-box,.user-box{padding:15px;background:#f0f0f0;border-radius:10px;min-height:100px;color:#333;overflow-y:auto;}
+  .user-box img{width:70px;height:70px;border-radius:50%;margin-right:10px;object-fit:cover;}
+  .user-info{display:flex;align-items:center;margin-bottom:10px;}
+  .recommendation{background-color:#e6f7ff;padding:10px;border-radius:8px;margin-top:10px;border-left:4px solid #1890ff;}
+  .login-form{display:none;background:rgba(255,255,255,0.9);padding:20px;border-radius:10px;margin-top:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);}
+  .login-form input{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:5px;}
+  .login-form button{margin-top:10px;}
+  .user-preferences{display:none;margin-top:15px;padding:15px;background:#f9f9f9;border-radius:10px;}
+  .preference-item{margin-bottom:10px;}
+  .preference-item label{display:block;margin-bottom:5px;font-weight:bold;}
+  .preference-item select{width:100%;padding:8px;border-radius:5px;border:1px solid #ddd;}
+  .emotion-history{display:none;margin-top:15px;padding:15px;background:#f9f9f9;border-radius:10px;}
+  .emotion-item{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee;}
+  @media(max-width:768px){.main{flex-direction:column;}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🤖 Smart Face Assistant</h1>
+    <p>Нүүрээ танилцуулж, сэтгэл хөдлөл + хувийн зөвлөгөөг хослуулсан ухаалаг туслах</p>
+  </header>
+
+  <div class="main">
+    <div class="video-container">
+      <video id="video" autoplay muted></video>
+      <canvas id="overlay"></canvas>
+      <div class="loading" id="loading">Модел болон камерийг ачаалж байна...</div>
+    </div>
+
+    <div class="controls">
+      <div class="login-form" id="loginForm">
+        <h3>Нэвтрэх / Бүртгүүлэх</h3>
+        <input type="text" id="usernameInput" placeholder="Хэрэглэгчийн нэр">
+        <input type="password" id="passwordInput" placeholder="Нууц үг">
+        <button id="loginBtn">Нэвтрэх</button>
+        <button id="registerBtn">Бүртгүүлэх</button>
+      </div>
+
+      <div class="user-box" id="userBox">
+        <div id="userInfo">Танигдсан хэрэглэгчийн мэдээлэл энд гарна</div>
+        <button id="logoutBtn" style="display:none; margin-top:10px;">Гарах</button>
+        <button id="preferencesBtn" style="display:none; margin-top:10px;">Тохиргоо</button>
+      </div>
+
+      <div class="user-preferences" id="userPreferences">
+        <h3>Хувийн тохиргоо</h3>
+        <div class="preference-item">
+          <label for="musicPreference">Дууны сонголт:</label>
+          <select id="musicPreference">
+            <option value="relaxing">Тайвшруулах</option>
+            <option value="energetic">Эрч хүчтэй</option>
+            <option value="focus">Төвлөрөл</option>
+            <option value="happy">Жаргалтай</option>
+          </select>
+        </div>
+        <div class="preference-item">
+          <label for="adviceType">Зөвлөгөөний төрөл:</label>
+          <select id="adviceType">
+            <option value="motivational">Урам зориг</option>
+            <option value="practical">Практик</option>
+            <option value="emotional">Сэтгэл хөдлөл</option>
+          </select>
+        </div>
+        <button id="savePreferencesBtn">Тохиргоог хадгалах</button>
+      </div>
+
+      <button id="recognizeBtn" style="display:none;">🔍 Таних</button>
+      <button id="screenshotBtn" style="display:none;">📸 Зураг хадгалах</button>
+
+      <div class="advice-box" id="adviceBox">Сэтгэл хөдлөлийн зөвлөгөө энд гарна</div>
+      
+      <div class="emotion-history" id="emotionHistory">
+        <h3>Сэтгэл хөдлөлийн түүх</h3>
+        <div id="emotionList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const overlay = document.getElementById('overlay');
+const loading = document.getElementById('loading');
+const loginForm = document.getElementById('loginForm');
+const usernameInput = document.getElementById('usernameInput');
+const passwordInput = document.getElementById('passwordInput');
+const loginBtn = document.getElementById('loginBtn');
+const registerBtn = document.getElementById('registerBtn');
+const recognizeBtn = document.getElementById('recognizeBtn');
+const screenshotBtn = document.getElementById('screenshotBtn');
+const userBox = document.getElementById('userBox');
+const userInfo = document.getElementById('userInfo');
+const logoutBtn = document.getElementById('logoutBtn');
+const preferencesBtn = document.getElementById('preferencesBtn');
+const userPreferences = document.getElementById('userPreferences');
+const musicPreference = document.getElementById('musicPreference');
+const adviceType = document.getElementById('adviceType');
+const savePreferencesBtn = document.getElementById('savePreferencesBtn');
+const adviceBox = document.getElementById('adviceBox');
+const emotionHistory = document.getElementById('emotionHistory');
+const emotionList = document.getElementById('emotionList');
+
+let labeledDescriptors = [];
+let currentUser = null;
+let isRunning = true;
+let userData = JSON.parse(localStorage.getItem('faceAssistantUsers')) || {};
+let emotionHistoryData = JSON.parse(localStorage.getItem('emotionHistory')) || {};
+
+async function startVideo() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+    video.srcObject = stream;
+    video.addEventListener('loadeddata', () => loading.style.display = 'none');
+  } catch(err) {
+    loading.textContent = 'Камер олдсонгүй: ' + err.message;
+  }
+}
+
+async function loadModels() {
+  const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+    faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
+  ]);
+  startVideo();
+}
+
+window.onload = function() {
+  loginForm.style.display = 'block';
+};
+
+loginBtn.addEventListener('click', function() {
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value.trim();
+  
+  if (!username || !password) {
+    alert("Нэр болон нууц үгээ оруулна уу!");
+    return;
+  }
+  
+  if (userData[username] && userData[username].password === password) {
+    currentUser = username;
+    loginForm.style.display = 'none';
+    recognizeBtn.style.display = 'block';
+    screenshotBtn.style.display = 'block';
+    logoutBtn.style.display = 'block';
+    preferencesBtn.style.display = 'block';
+    emotionHistory.style.display = 'block';
+    
+    userInfo.innerHTML = `
+      <div class="user-info">
+        <img src="https://ui-avatars.com/api/?name=${username}" alt="${username}">
+        <div>
+          <strong>${username}</strong><br>
+          Амжилттай нэвтэрлээ ✅
+        </div>
+      </div>
+    `;
+    
+    if (userData[username].preferences) {
+      musicPreference.value = userData[username].preferences.music || 'relaxing';
+      adviceType.value = userData[username].preferences.advice || 'motivational';
+    }
+    
+    updateEmotionHistory();
+    
+    alert(`Тавтай морил, ${username}!`);
+  } else {
+    alert("Нэр эсвэл нууц үг буруу байна!");
+  }
+});
+
+registerBtn.addEventListener('click', async function() {
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value.trim();
+  
+  if (!username || !password) {
+    alert("Нэр болон нууц үгээ оруулна уу!");
+    return;
+  }
+  
+  if (userData[username]) {
+    alert("Энэ хэрэглэгчийн нэр аль хэдийн бүртгэгдсэн байна!");
+    return;
+  }
+
+  const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+    .withFaceLandmarks()
+    .withFaceDescriptor();
+  
+  if (!detections) {
+    alert("Нүүр илрээгүй. Камер руу харна уу!");
+    return;
+  }
+
+  userData[username] = {
+    password: password,
+    faceDescriptor: Array.from(detections.descriptor),
+    preferences: {
+      music: 'relaxing',
+      advice: 'motivational'
+    },
+    registeredAt: new Date().toISOString()
+  };
+  
+  localStorage.setItem('faceAssistantUsers', JSON.stringify(userData));
+  
+  alert(`${username} хэрэглэгч амжилттай бүртгэгдлээ! Одоо нэвтрэх боломжтой.`);
+});
+
+logoutBtn.addEventListener('click', function() {
+  currentUser = null;
+  loginForm.style.display = 'block';
+  recognizeBtn.style.display = 'none';
+  screenshotBtn.style.display = 'none';
+  logoutBtn.style.display = 'none';
+  preferencesBtn.style.display = 'none';
+  userPreferences.style.display = 'none';
+  emotionHistory.style.display = 'none';
+  userInfo.innerHTML = 'Танигдсан хэрэглэгчийн мэдээлэл энд гарна';
+  adviceBox.innerHTML = 'Сэтгэл хөдлөлийн зөвлөгөө энд гарна';
+  usernameInput.value = '';
+  passwordInput.value = '';
+});
+
+preferencesBtn.addEventListener('click', function() {
+  userPreferences.style.display = userPreferences.style.display === 'block' ? 'none' : 'block';
+});
+
+savePreferencesBtn.addEventListener('click', function() {
+  if (currentUser) {
+    userData[currentUser].preferences = {
+      music: musicPreference.value,
+      advice: adviceType.value
+    };
+    localStorage.setItem('faceAssistantUsers', JSON.stringify(userData));
+    alert("Тохиргоо амжилттай хадгалагдлаа!");
+    userPreferences.style.display = 'none';
+  }
+});
+
+function getEmojiAdvice(expressions, username) {
+  const maxExp = Object.keys(expressions).reduce((a, b) => expressions[a] > expressions[b] ? a : b);
+  const userPrefs = userData[username]?.preferences || { music: 'relaxing', advice: 'motivational' };
+  
+  let emoji, advice, music;
+  
+  switch(maxExp) {
+    case 'happy':
+      emoji = '😊';
+      advice = 'Та баяртай байна! Энэ уур амьсгалыг хадгалаарай :)';
+      music = userPrefs.music === 'happy' ? 'Жаргалтай дууны жагсаалт' : 'Ерөнхий дууны жагсаалт';
+      break;
+    case 'sad':
+      emoji = '😢';
+      advice = 'Гуниг мэдэрч байна. Амьсгаа аваад тайвшир, бүх зүйл сайхан болно.';
+      music = userPrefs.music === 'relaxing' ? 'Тайвшруулах дууны жагсаалт' : 'Ерөнхий дууны жагсаалт';
+      break;
+    case 'angry':
+      emoji = '😡';
+      advice = 'Уур уцаартай байна! Тайвширч, аажуухан бодох хэрэгтэй.';
+      music = userPrefs.music === 'relaxing' ? 'Тайвшруулах дууны жагсаалт' : 'Ерөнхий дууны жагсаалт';
+      break;
+    case 'surprised':
+      emoji = '😮';
+      advice = 'Гайхсан байна! Гайхлыг эерэг эрч хүч болгон хувиргаарай.';
+      music = userPrefs.music === 'energetic' ? 'Эрч хүчтэй дууны жагсаалт' : 'Ерөнхий дууны жагсаалт';
+      break;
+    case 'fearful':
+      emoji = '😨';
+      advice = 'Айж байна. Айдас бол хэвийн мэдрэмж, гэхдээ түүнийг удирдаж сур.';
+      music = userPrefs.music === 'relaxing' ? 'Тайвшруулах дууны жагсаалт' : 'Ерөнхий дууны жагсаалт';
+      break;
+    case 'disgusted':
+      emoji = '🤢';
+      advice = 'Эвгүй мэдрэмжтэй байна. Энэ мэдрэмж өнгөрөх болно.';
+      music = userPrefs.music === 'focus' ? 'Төвлөрөл дэмжих дууны жагсаалт' : 'Ерөнхий дууны жагсаалт';
+      break;
+    default:
+      emoji = '😐';
+      advice = 'Тайван байна! Энэ бол сайн шинж — төвлөрөл өндөр байна.';
+      music = userPrefs.music === 'focus' ? 'Төвлөрөл дэмжих дууны жагсаалт' : 'Ерөнхий дууны жагсаалт';
+  }
+  
+  let specificAdvice = '';
+  switch(userPrefs.advice) {
+    case 'motivational':
+      specificAdvice = 'Өнөөдөр өөрийгөө урамшуулж, шинэ зүйл туршиж үзэхэд тохиромжтой өдөр!';
+      break;
+    case 'practical':
+      specificAdvice = 'Өдрийн төлөвлөгөөгөө хийж, үр дүнтэй ажиллах цаг болж байна.';
+      break;
+    case 'emotional':
+      specificAdvice = 'Одоогийн мэдрэмжүүдээ хүлээн зөвшөөрч, тэдгээрийг боловсруулахад цаг гарга.';
+      break;
+  }
+  
+  return { emoji, advice, music, specificAdvice, emotion: maxExp };
+}
+
+recognizeBtn.addEventListener('click', async function() {
+  if (!currentUser) {
+    alert("Эхлээд нэвтрэх хэрэгтэй!");
+    return;
+  }
+
+  const userDescriptors = [];
+  for (const username in userData) {
+    if (userData[username].faceDescriptor) {
+      const descriptor = new Float32Array(userData[username].faceDescriptor);
+      userDescriptors.push(new faceapi.LabeledFaceDescriptors(username, [descriptor]));
+    }
+  }
+  
+  if (userDescriptors.length === 0) {
+    alert("Бүртгэлтэй нүүр алга. Эхлээд бүртгүүлнэ үү!");
+    return;
+  }
+  
+  const faceMatcher = new faceapi.FaceMatcher(userDescriptors, 0.6);
+  const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+    .withFaceLandmarks()
+    .withFaceDescriptor()
+    .withFaceExpressions();
+  
+  if (!detections) {
+    alert("Нүүр илрээгүй!");
+    return;
+  }
+  
+  const bestMatch = faceMatcher.findBestMatch(detections.descriptor);
+  const { emoji, advice, music, specificAdvice, emotion } = getEmojiAdvice(detections.expressions, bestMatch.label);
+
+  userInfo.innerHTML = `
+    <div class="user-info">
+      <img src="https://ui-avatars.com/api/?name=${bestMatch.label}" alt="${bestMatch.label}">
+      <div>
+        <strong>${bestMatch.label}</strong><br>
+        Танигдсан байна ✅<br>
+        Сэтгэл хөдлөл: ${emoji} ${emotion}
+      </div>
+    </div>
+  `;
+  
+  adviceBox.innerHTML = `
+    ${emoji} ${advice}
+    <div class="recommendation">
+      <strong>Танд зориулсан санал:</strong><br>
+      ${specificAdvice}<br>
+      <strong>Дууны санал:</strong> ${music}
+    </div>
+  `;
+
+  if (!emotionHistoryData[currentUser]) {
+    emotionHistoryData[currentUser] = [];
+  }
+  
+  emotionHistoryData[currentUser].push({
+    emotion: emotion,
+    emoji: emoji,
+    timestamp: new Date().toISOString(),
+    confidence: Math.max(...Object.values(detections.expressions))
+  });
+
+  if (emotionHistoryData[currentUser].length > 10) {
+    emotionHistoryData[currentUser].shift();
+  }
+  
+  localStorage.setItem('emotionHistory', JSON.stringify(emotionHistoryData));
+  updateEmotionHistory();
+});
+
+function updateEmotionHistory() {
+  if (!currentUser || !emotionHistoryData[currentUser]) {
+    emotionList.innerHTML = '<p>Түүх хоосон байна</p>';
+    return;
+  }
+  
+  let historyHTML = '';
+  emotionHistoryData[currentUser].slice().reverse().forEach(entry => {
+    const date = new Date(entry.timestamp);
+    const timeString = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+    historyHTML += `
+      <div class="emotion-item">
+        <span>${entry.emoji} ${entry.emotion}</span>
+        <span>${timeString}</span>
+      </div>
+    `;
+  });
+  
+  emotionList.innerHTML = historyHTML;
+}
+
+video.addEventListener('play', () => {
+  overlay.width = video.videoWidth;
+  overlay.height = video.videoHeight;
+  const displaySize = { width: video.videoWidth, height: video.videoHeight };
+  faceapi.matchDimensions(overlay, displaySize);
+
+  async function detect() {
+    if (!isRunning) return requestAnimationFrame(detect);
+    const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks()
+      .withFaceExpressions();
+    const resized = faceapi.resizeResults(detections, displaySize);
+    const ctx = overlay.getContext('2d');
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+    resized.forEach(det => {
+      const { x, y, width, height } = det.detection.box;
+      const maxExp = Object.keys(det.expressions).reduce((a, b) => 
+        det.expressions[a] > det.expressions[b] ? a : b
+      );
+      
+      let emoji;
+      switch(maxExp) {
+        case 'happy': emoji = '😊'; break;
+        case 'sad': emoji = '😢'; break;
+        case 'angry': emoji = '😡'; break;
+        case 'surprised': emoji = '😮'; break;
+        case 'fearful': emoji = '😨'; break;
+        case 'disgusted': emoji = '🤢'; break;
+        default: emoji = '😐';
+      }
+      
+      ctx.font = `${Math.round(width * 0.8)}px Arial`;
+      ctx.fillText(emoji, x, y + height / 1.2);
+    });
+    requestAnimationFrame(detect);
+  }
+  detect();
+});
+
+screenshotBtn.addEventListener('click', () => {
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = video.videoWidth;
+  tempCanvas.height = video.videoHeight;
+  const ctx = tempCanvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+  const link = document.createElement('a');
+  link.href = tempCanvas.toDataURL('image/png');
+  link.download = 'face.png';
+  link.click();
+});
+loadModels();
+</script>
+</body>
+</html>

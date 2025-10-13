@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Face Assistant — Нэвтрэх</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script defer src="js/face-register.js"></script>
+  <script defer src="js/face-login.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🤖 Smart Face Assistant</h1>
+      <p>Нүүр царайгаар бүртгэх ба зөвлөгөө, хөгжилтэй</p>
+    </header>
+
+    <div class="video-container">
+      <video id="video" autoplay muted></video>
+      <canvas id="overlay"></canvas>
+      <div class="loading" id="loading">Модел болон камерийг ачаалж байна...</div>
+    </div>
+    <div class="actions">
+      <input type="text" id="usernameInput" placeholder="Хэрэглэгчийн нэр (шинэ бол бич)">
+      <button id="registerBtn">🟢 Бүртгүүлэх</button>
+      <button id="loginBtn">🔵 Нэвтрэх</button>
+    </div>
+  </div>
+</body>
+</html>

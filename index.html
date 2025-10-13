@@ -27,7 +27,7 @@
 <div class="container">
   <header>
     <h1>Smart Mood Assistant</h1>
-    <p>Нүүрний сэтгэл хөдлөл тодорхойлж emoji ба зөвлөгөө гаргана</p>
+    <p>Хүний сэтгэл хөдлөл тодорхойлж emoji ба зөвлөгөө гаргана</p>
   </header>
   <div class="main">
     <div class="video-container">
@@ -56,7 +56,6 @@ let isRunning = true;
 let lastTime = 0;
 const interval = 150;
 
-// Камер асаах
 async function startVideo() {
   try{
     const stream = await navigator.mediaDevices.getUserMedia({video:{}});

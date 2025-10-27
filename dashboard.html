@@ -11,81 +11,64 @@
 <body>
   <div class="container">
     <header class="topbar">
-      <h2>🤖 Тавтай морил!</h2>
-      <div class="user-info" id="dashboardUser">Хэрэглэгч...</div>
+      <div class="hed">
+        <h2>Сэтгэл хөдлөл судлах ухаалан туслах</h2>
+        <div class="user-info" id="dashboardUser">Хэрэглэгч...</div>
+      </div>
       <nav class="menu">
         <a href="music.html">🎵 Дуу</a>
-        <a href="settings.html">⚙️ Тохиргоо</a>
         <a href="#" id="leaderboardBtn">🏆 Leaderboard</a>
+        <div class="theme-selector">
+          <label>🎨 Theme</label>
+          <select id="colorSelect">
+            <option value="ligth">
+              <button class="theme-btn" data-theme="light">Light</button>
+            </option>
+            <option value="dark">
+              <button class="theme-btn" data-theme="dark">Dark</button>
+            </option>
+            <option value="blue">
+              <button class="theme-btn" data-theme="auto">Blue</button>
+            </option>
+            <option value="gray">
+              <button class="theme-btn" data-theme="auto">Blue</button>
+            </option>
+            <option value="auto">
+              <button class="theme-btn" data-theme="auto">Blue</button>
+            </option>
+          </select>
+        </div>
         <a href="index1.html" id="logoutBtn">🚪 Гарах</a>
       </nav>
     </header>
-    <button id="openCC" class="cc-btn">⚙️ Control Center</button>
-        <aside id="controlCenter" class="cc-panel hidden">
-        <div class="cc-header">
-            <strong>⚙️ Control Center</strong>
-            <button id="closeCC" class="cc-close">✖</button>
-        </div>
-        <div class="cc-group">
-            <label>🎨 Theme</label>
-            <div class="cc-row">
-            <button class="theme-btn" data-theme="light">Light</button>
-            <button class="theme-btn" data-theme="dark">Dark</button>
-            <button class="theme-btn" data-theme="auto">Auto</button>
-            </div>
-        </div>
-        <div class="cc-group">
-            <label>🎯 Emotion confidence threshold</label>
-            <input id="thrSlider" type="range" min="0.3" max="0.9" step="0.05">
-            <div>Current: <span id="thrVal"></span></div>
-        </div>
-        <div class="cc-group">
-            <label>🕹️ Difficulty (Challenges)</label>
-            <select id="difficulty">
-            <option value="easy">Easy (урт хугацаа)</option>
-            <option value="normal">Normal</option>
-            <option value="hard">Hard (богино хугацаа)</option>
-            </select>
-        </div>
-        <div class="cc-group">
-            <label>🏅 Badges (амжилтууд)</label>
-            <div id="badgesBox" class="badges"></div>
-        </div>
-        <div class="cc-group">
-            <button id="resetData" class="danger">Бүх өгөгдлийг цэвэрлэх</button>
-        </div>
-    </aside>
-
     <div class="main-section">
       <div class="video-box">
         <video id="video" autoplay muted></video>
         <canvas id="overlay"></canvas>
-        <div class="loading" id="loading">Камер болон загварыг ачааллаж байна...</div>
+        <div class="loading" id="loading">Камер ачааллаж байна...</div>
       </div>
-
       <div class="advice-panel">
-        <h3>🧠 Сэтгэл хөдлөлийн мэдээлэл</h3>
+        <h3>Сэтгэл хөдлөлийн мэдээлэл</h3>
         <div id="emotionDisplay">Emotion илрүүлэхэд бэлэн...</div>
         <div id="adviceBox">
           Энд зөвлөгөө автоматаар гарна.
         </div>
       </div>
       <div class="interactive-panel">
-        <h3 class="game-h">🎮 Хөгжилтэй хэсэг</h3>
+        <h3 class="game-h">Хөгжилтэй хэсэг</h3>
         <div id="leaderboardSection" class="leaderboard hidden">
-            <h3>🏆 Leaderboard</h3>
-            <div id="leaderboardContent">Одоогоор мэдээлэл алга.</div>
+          <h3>🏆 Leaderboard</h3>
+          <div id="leaderboardContent">Одоогоор мэдээлэл алга.</div>
         </div>
         <div class="game-box">
-            <button id="startGameBtn">🎮 Try Not To Laugh</button>
-            <div id="gameStatus" class="game-status"></div>
-            <button id="challengeGameBtn">⚡ Relax or React Challenge</button>
+          <button id="startGameBtn">Try Not To Laugh</button>
+          <div id="gameStatus" class="game-status"></div>
+          <button id="challengeGameBtn">Relax or React Challenge</button>
         </div>
       </div>
     </div>
-
     <div class="history-section">
-      <h3>🕒 Сүүлийн эмоци түүх</h3>
+      <h3>Emotion history</h3>
       <div id="emotionHistoryList">
         Түүх хараахан алга.
       </div>

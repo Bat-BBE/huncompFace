@@ -26,6 +26,7 @@ async function startVideo() {
     loading.textContent = 'Камер олдсонгүй: ' + err.message;
   }
 }
+
 registerBtn.addEventListener('click', async () => {
   const username = usernameInput.value.trim();
   if (!username) {

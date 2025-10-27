@@ -8,14 +8,14 @@
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <script defer src="js/face-register.js"></script>
   <script defer src="js/face-login.js"></script>
+  <script defer src="js/utils.js"></script>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>🤖 Smart Face Assistant</h1>
-      <p>Нүүр царайгаар бүртгэх ба зөвлөгөө, хөгжилтэй</p>
+      <p>Нүүр царайгаар бүртгэх ба нэвтрэх</p>
     </header>
-
     <div class="video-container">
       <video id="video" autoplay muted></video>
       <canvas id="overlay"></canvas>
@@ -27,5 +27,6 @@
       <button id="loginBtn">🔵 Нэвтрэх</button>
     </div>
   </div>
+  <div class="toast-container" id="toastContainer"></div>
 </body>
 </html>
